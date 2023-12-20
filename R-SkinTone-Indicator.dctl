@@ -8,7 +8,7 @@ DEFINE_UI_PARAMS(skinToneSaturation, Saturation Midpoint, DCTLUI_SLIDER_FLOAT, 0
 DEFINE_UI_PARAMS(skinToneSaturationTolerance, Saturation Tolerance, DCTLUI_SLIDER_FLOAT, 0.2f, 0.0f, 0.5f, 0.01f);
 DEFINE_UI_PARAMS(skinToneLuminance, Luminance Midpoint, DCTLUI_SLIDER_FLOAT, 0.625f, 0.0f, 1.0f, 0.01f);
 DEFINE_UI_PARAMS(skinToneLuminanceTolerance, Luminance Tolerance, DCTLUI_SLIDER_FLOAT, 0.275f, 0.0f, 0.5f, 0.01f);
-DEFINE_UI_PARAMS(grayMask, Show Skintones Only, DCTLUI_CHECK_BOX, 0);
+DEFINE_UI_PARAMS(grayMask, Show Skin Tones Only, DCTLUI_CHECK_BOX, 0);
 
 // Convert RGB to HSV
 __DEVICE__ float3 rgbToHsv(float3 rgbColor)
