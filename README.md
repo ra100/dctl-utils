@@ -4,7 +4,7 @@
 
 - highlights skin tone
 
-TODO: screenshots, more desriptionC
+TODO: screenshots, more desription
 
 ## Installation
 

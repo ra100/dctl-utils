@@ -1,11 +1,6 @@
-__DEVICE__ float skinToneHue = 18.0f;
-__DEVICE__ float hueMargins = 10.0f;
+__CONSTANT__ float skinToneHue = 18.0f;
+__CONSTANT__ float hueMargins = 10.0f;
 // Define a skin tone tolerance as a constant that can be modified via the UI
-__DEVICE__ float skinToneTolerance = 5.0f;
-__DEVICE__ float skinToneSaturation = 0.26f;
-__DEVICE__ float skinToneSaturationTolerance = 0.2f;
-__DEVICE__ float skinToneLuminance = 0.625f;
-__DEVICE__ float skinToneLuminanceTolerance = 0.275f;
 
 // Use the DEFINE_UI_PARAMS function to create a UI slider for our tolerance value
 DEFINE_UI_PARAMS(skinToneTolerance, Skin Tone Tolerance, DCTLUI_SLIDER_FLOAT, 5.0f, 0.0f, 15.0f, 0.01f);
@@ -55,7 +50,7 @@ __DEVICE__ float3 rgbToHsv(float3 rgbColor)
 }
 
 //
-__DEVICE__ int isPossibleSkinTone(float3 hsvColor, float3 rgbColor)
+__DEVICE__ int isPossibleSkinTone(float3 hsvColor, float3 rgbColor, float skinToneTolerance, float skinToneSaturation, float skinToneSaturationTolerance, float skinToneLuminance, float skinToneLuminanceTolerance)
 {
   float hue = hsvColor.x;
   float saturation = hsvColor.y;
@@ -101,7 +96,7 @@ __DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p
   float3 green = make_float3(0.0f, 1.0f, 0.0f);
 
   // If the color could be a skin tone, highlight it as yellow
-  float difference = isPossibleSkinTone(pixelColorHsv, pixelColorRgb);
+  float difference = isPossibleSkinTone(pixelColorHsv, pixelColorRgb, skinToneTolerance, skinToneSaturation, skinToneSaturationTolerance, skinToneLuminance, skinToneLuminanceTolerance);
 
   if (difference == 0)
   {
