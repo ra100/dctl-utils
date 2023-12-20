@@ -1,0 +1,122 @@
+__DEVICE__ float skinToneHue = 18.0f;
+__DEVICE__ float hueMargins = 10.0f;
+// Define a skin tone tolerance as a constant that can be modified via the UI
+__DEVICE__ float skinToneTolerance = 5.0f;
+__DEVICE__ float skinToneSaturation = 0.26f;
+__DEVICE__ float skinToneSaturationTolerance = 0.2f;
+__DEVICE__ float skinToneLuminance = 0.625f;
+__DEVICE__ float skinToneLuminanceTolerance = 0.275f;
+
+// Use the DEFINE_UI_PARAMS function to create a UI slider for our tolerance value
+DEFINE_UI_PARAMS(skinToneTolerance, Skin Tone Tolerance, DCTLUI_SLIDER_FLOAT, 5.0f, 0.0f, 15.0f, 0.01f);
+DEFINE_UI_PARAMS(skinToneSaturation, Saturation Midpoint, DCTLUI_SLIDER_FLOAT, 0.26f, 0.0f, 1.0f, 0.01f);
+DEFINE_UI_PARAMS(skinToneSaturationTolerance, Saturation Tolerance, DCTLUI_SLIDER_FLOAT, 0.2f, 0.0f, 0.5f, 0.01f);
+DEFINE_UI_PARAMS(skinToneLuminance, Luminance Midpoint, DCTLUI_SLIDER_FLOAT, 0.625f, 0.0f, 1.0f, 0.01f);
+DEFINE_UI_PARAMS(skinToneLuminanceTolerance, Luminance Tolerance, DCTLUI_SLIDER_FLOAT, 0.275f, 0.0f, 0.5f, 0.01f);
+
+// Convert RGB to HSV
+__DEVICE__ float3 rgbToHsv(float3 rgbColor)
+{
+  float r = rgbColor.x;
+  float g = rgbColor.y;
+  float b = rgbColor.z;
+
+  float maxValue = _fmaxf(_fmaxf(r, g), b);
+  float minValue = _fminf(_fminf(r, g), b);
+  float delta = maxValue - minValue;
+
+  float hue = 0.0f;
+
+  if (maxValue != minValue) // if grayscale, hue is undefined
+  {
+    if (maxValue == r)
+    {
+      hue = 60.0f * (0.0f + (g - b) / delta);
+    }
+    else if (maxValue == g)
+    {
+      hue = 60.0f * (2.0f + (b - r) / delta);
+    }
+    else if (maxValue == b)
+    {
+      hue = 60.0f * (4.0f + (r - g) / delta);
+    }
+
+    if (hue < 0.0f)
+    {
+      hue = hue + 360.0f;
+    }
+  }
+
+  float saturation = (maxValue == 0.0f) ? 0.0f : delta / maxValue;
+  float value = maxValue;
+
+  return make_float3(hue, saturation, value); // HSV values are in range: Hue [0,360), Saturation [0,1], Value [0,1]
+}
+
+//
+__DEVICE__ int isPossibleSkinTone(float3 hsvColor, float3 rgbColor)
+{
+  float hue = hsvColor.x;
+  float saturation = hsvColor.y;
+  float luminance = ((0.299f * rgbColor.x) + (0.587f * rgbColor.y) + (0.114f * rgbColor.z));
+
+  float satDiff = _fabs(skinToneSaturation - saturation);
+  float lumDiff = _fabs(skinToneLuminance - luminance);
+  float hueDiff = skinToneHue - hue;
+
+  if (satDiff <= skinToneSaturationTolerance && lumDiff <= skinToneLuminanceTolerance)
+  {
+    if (_fabs(hueDiff) <= skinToneTolerance)
+    {
+      return 0;
+    }
+
+    if (_fabs(hueDiff) < hueMargins)
+    {
+      if (hueDiff < 0)
+      {
+        return -1;
+      }
+
+      if (hueDiff > 0)
+      {
+        return 1;
+      }
+    }
+  }
+
+  return -2;
+}
+
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, float p_R, float p_G, float p_B)
+{
+  // Convert the pixel color to YUV
+  float3 pixelColorRgb = make_float3(p_R, p_G, p_B);
+  float3 pixelColorHsv = rgbToHsv(pixelColorRgb);
+
+  // Define the colors we'll be working with: yellow, magenta, green
+  float3 yellow = make_float3(1.0f, 1.0f, 0.0f);
+  float3 magenta = make_float3(1.0f, 0.0f, 1.0f);
+  float3 green = make_float3(0.0f, 1.0f, 0.0f);
+
+  // If the color could be a skin tone, highlight it as yellow
+  float difference = isPossibleSkinTone(pixelColorHsv, pixelColorRgb);
+
+  if (difference == 0)
+  {
+    return yellow;
+  }
+
+  if (difference == -1)
+  {
+    return green;
+  }
+
+  if (difference == 1)
+  {
+    return magenta;
+  }
+
+  return pixelColorRgb;
+}
